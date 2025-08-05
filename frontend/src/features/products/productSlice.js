@@ -62,6 +62,19 @@ export const updateProduct = createAsyncThunk('products/update', async ({ id, fo
     return rejectWithValue(err.message);
   }
 });
+// export const updateProduct = createAsyncThunk(
+//   "products/updateProduct",
+//   async ({ id, formData }, thunkAPI) => {
+//     try {
+//       const response = await axios.put(`/api/products/${id}`, formData, {
+//         headers: { "Content-Type": "multipart/form-data" },
+//       });
+//       return response.data;
+//     } catch (err) {
+//       return thunkAPI.rejectWithValue(err.response.data);
+//     }
+//   }
+// );
 
 
 const productSlice = createSlice({
@@ -112,5 +125,29 @@ const productSlice = createSlice({
       
   },
 });
+export const deleteMultipleProducts = createAsyncThunk(
+  'products/deleteMultiple',
+  async (ids, { rejectWithValue }) => {
+    try {
+      const res = await fetch('http://localhost:5008/api/products/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) return rejectWithValue(data.message);
+
+      return ids; // Return the list of deleted IDs
+    } catch (err) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
 
 export default productSlice.reducer;

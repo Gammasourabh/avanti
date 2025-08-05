@@ -1,66 +1,47 @@
 const Product = require('../models/HomePageModels/productModel');
 
-// GET /api/products
+// Get all products
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.find();
-    res.status(200).json(products);
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch products", error: err });
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to fetch products", 
+      error: err.message 
+    });
   }
 };
 
-// GET /api/products/:id
+// Get product by ID
 exports.getProductById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Not found" });
-    res.status(200).json(product);
-  } catch (err) {
-    res.status(500).json({ message: "Error getting product", error: err });
-  }
-};
-
-
-// POST /api/products
-exports.createProduct = async (req, res) => {
-  try {
-    const newProduct = new Product(req.body);
-    const saved = await newProduct.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to create product", error: err });
-  }
-};
-// PUT /api/products/:id
-exports.updateProduct = async (req, res) => {
-  try {
-    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Product not found" 
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: product
     });
-
-    if (!updated) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-
-    res.status(200).json(updated);
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err });
-  }
-};
-// DELETE /api/products/:id
-exports.deleteProduct = async (req, res) => {
-  try {
-    const deleted = await Product.findByIdAndDelete(req.params.id);
-    if (!deleted) {
-      return res.status(404).json({ message: "Product not found" });
-    }
-    res.status(200).json({ message: "Product deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Failed to delete product", error: err });
+    res.status(500).json({ 
+      success: false,
+      message: "Error getting product", 
+      error: err.message 
+    });
   }
 };
 
+// Create new product
 exports.createProduct = async (req, res) => {
   try {
     console.log("👉 req.body:", req.body);
@@ -68,103 +49,296 @@ exports.createProduct = async (req, res) => {
 
     const {
       name,
+      category,
       price,
+      discount,
+      discountPrice,
       description,
-      category,
-      stock,
-      sizes,
-      instructions = [],
-      labels = [],
-    } = req.body;
-
-    const sizeArray = typeof sizes === "string" ? sizes.split(",").map((s) => s.trim()) : [];
-    const instructionArray = Array.isArray(instructions) ? instructions : [instructions];
-    const labelArray = Array.isArray(labels) ? labels : [labels];
-
-    const imagePaths = (req.files?.images || []).map((file) => `/upload/${file.filename}`);
-    const certificatePath = req.files?.certificate?.[0]?.filename || null;
-
-    const newProduct = new Product({
-      name,
-      price: Number(price),
-      description,
-      category,
-      stock: Number(stock),
-      sizes: sizeArray,
-      images: imagePaths,
-      instructions: instructionArray,
-      labels: labelArray,
-      certificate: certificatePath,
-    });
-
-    const saved = await newProduct.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    console.error("❌ Backend error:", err);
-    res.status(500).json({ message: "Failed to create product", error: err.message });
-  }
-};
-exports.updateProduct = async (req, res) => {
-  try {
-    const {
-      name,
-      price,
-      description,
-      category,
+      sku,
       stock,
       sizes,
       instructions,
-      labels,
-      material,
-      discount,
-      discountPrice,
-      expirationDate,
+      material
     } = req.body;
 
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      {
-        name,
-        price,
-        description,
-        category,
-        stock,
-        sizes: typeof sizes === 'string' ? sizes.split(',') : sizes,
-        instructions,
-        labels,
-        material,
-        discount,
-        discountPrice,
-        expirationDate,
-      },
-      { new: true }
-    );
-
-    if (!updatedProduct) {
-      return res.status(404).json({ message: "Product not found" });
+    // Validate required fields
+    if (!name || !category || !price || !sku) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: name, category, price, and sku are required"
+      });
     }
 
-    res.status(200).json(updatedProduct);
+    // Process arrays from form data
+    const sizeArray = sizes ? 
+      (typeof sizes === "string" ? sizes.split(",").map(s => s.trim()) : sizes) : [];
+    
+    const instructionArray = instructions ? 
+      (Array.isArray(instructions) ? instructions : [instructions]) : [];
+
+    // Handle image uploads
+    const imagePaths = (req.files?.images || []).map(file => `/upload/${file.filename}`);
+
+    // Calculate discount price if not provided
+    let finalDiscountPrice = discountPrice;
+    if (discount && discount > 0 && !discountPrice) {
+      finalDiscountPrice = price - (price * discount / 100);
+    }
+
+    const newProduct = new Product({
+      name,
+      category,
+      price: Number(price),
+      discount: discount ? Number(discount) : 0,
+      discountPrice: finalDiscountPrice ? Number(finalDiscountPrice) : null,
+      description,
+      sku: sku.toUpperCase(), // Ensure SKU is uppercase
+      stock: stock ? Number(stock) : 0,
+      sizes: sizeArray,
+      instructions: instructionArray,
+      material,
+      images: imagePaths
+    });
+
+    const saved = await newProduct.save();
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: saved
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to update product", error: err });
+    console.error("Create product error:", err);
+    
+    // Handle duplicate SKU error
+    if (err.code === 11000 && err.keyPattern?.sku) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU already exists. Please use a unique SKU.",
+        error: "Duplicate SKU"
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false,
+      message: "Failed to create product", 
+      error: err.message 
+    });
   }
 };
 
+// Update product
+exports.updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const {
+      name,
+      category,
+      price,
+      discount,
+      discountPrice,
+      description,
+      sku,
+      stock,
+      sizes,
+      instructions,
+      material
+    } = req.body;
+
+    // Build update object with only provided fields
+    const updateData = {};
+    
+    if (name !== undefined) updateData.name = name;
+    if (category !== undefined) updateData.category = category;
+    if (price !== undefined) updateData.price = Number(price);
+    if (discount !== undefined) updateData.discount = Number(discount);
+    if (discountPrice !== undefined) updateData.discountPrice = Number(discountPrice);
+    if (description !== undefined) updateData.description = description;
+    if (sku !== undefined) updateData.sku = sku.toUpperCase();
+    if (stock !== undefined) updateData.stock = Number(stock);
+    if (material !== undefined) updateData.material = material;
+    
+    // Handle arrays
+    if (sizes !== undefined) {
+      updateData.sizes = typeof sizes === 'string' ? sizes.split(',').map(s => s.trim()) : sizes;
+    }
+    if (instructions !== undefined) {
+      updateData.instructions = Array.isArray(instructions) ? instructions : [instructions];
+    }
+
+    // Handle new image uploads
+    if (req.files?.images) {
+      const imagePaths = req.files.images.map(file => `/upload/${file.filename}`);
+      updateData.images = imagePaths;
+    }
+
+    // Calculate discount price if discount is updated but discountPrice is not provided
+    if (updateData.discount && updateData.discount > 0 && !updateData.discountPrice) {
+      const currentPrice = updateData.price || (await Product.findById(id)).price;
+      updateData.discountPrice = currentPrice - (currentPrice * updateData.discount / 100);
+    }
+
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id, 
+      updateData, 
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!updatedProduct) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Product not found" 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Product updated successfully", 
+      data: updatedProduct 
+    });
+  } catch (error) {
+    console.error("Update error:", error);
+    
+    // Handle duplicate SKU error
+    if (error.code === 11000 && error.keyPattern?.sku) {
+      return res.status(400).json({
+        success: false,
+        message: "SKU already exists. Please use a unique SKU.",
+        error: "Duplicate SKU"
+      });
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: "Failed to update product",
+      error: error.message 
+    });
+  }
+};
+
+// Get products by category
 exports.getProductsByCategory = async (req, res) => {
   try {
     const { category } = req.query;
 
     if (!category) {
-      return res.status(400).json({ message: "Category is required" });
+      return res.status(400).json({ 
+        success: false,
+        message: "Category parameter is required" 
+      });
     }
 
-    const products = await Product.find({ category });
-    res.status(200).json(products);
+    const products = await Product.find({ 
+      category: { $regex: new RegExp(category, 'i') } // Case-insensitive search
+    });
+    
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
   } catch (err) {
     res.status(500).json({
+      success: false,
       message: "Failed to fetch products by category",
       error: err.message,
     });
   }
 };
 
+// Delete product
+exports.deleteProduct = async (req, res) => {
+  try {
+    const deleted = await Product.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Product not found" 
+      });
+    }
+    res.status(200).json({ 
+      success: true,
+      message: "Product deleted successfully",
+      data: deleted
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: "Server error", 
+      error: error.message 
+    });
+  }
+};
+
+// Search products
+exports.searchProducts = async (req, res) => {
+  try {
+    const { q, category, minPrice, maxPrice } = req.query;
+    
+    let query = {};
+    
+    // Text search
+    if (q) {
+      query.$or = [
+        { name: { $regex: q, $options: 'i' } },
+        { description: { $regex: q, $options: 'i' } },
+        { sku: { $regex: q, $options: 'i' } }
+      ];
+    }
+    
+    // Category filter
+    if (category) {
+      query.category = { $regex: new RegExp(category, 'i') };
+    }
+    
+    // Price range filter
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+    
+    const products = await Product.find(query);
+    
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Search failed",
+      error: error.message
+    });
+  }
+};
+
+// Get product by SKU
+exports.getProductBySku = async (req, res) => {
+  try {
+    const { sku } = req.params;
+    const product = await Product.findOne({ sku: sku.toUpperCase() });
+    
+    if (!product) {
+      return res.status(404).json({ 
+        success: false,
+        message: "Product not found with this SKU" 
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: product
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false,
+      message: "Error getting product by SKU", 
+      error: err.message 
+    });
+  }
+};
