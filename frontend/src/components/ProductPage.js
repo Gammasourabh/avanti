@@ -7,6 +7,9 @@ import {
   MDBIcon,
   MDBCollapse,
 } from "mdb-react-ui-kit";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 import Navbar from "../components/Navbar";
 import Advertisements from "./Advertisements";
 import Footer from "../components/Footer";
@@ -23,7 +26,6 @@ const ProductPage = () => {
   const { id } = useParams();
   const { list: products } = useSelector((state) => state.products);
 
-  // Fetch product list and match product by ID
   useEffect(() => {
     if (!products.length) {
       dispatch(fetchProducts());
@@ -42,45 +44,82 @@ const ProductPage = () => {
     return <p className="text-center mt-5">Product not found.</p>;
   }
 
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: true,
+  };
+
   return (
     <>
       <Advertisements />
       <Navbar />
 
       <MDBContainer className="my-5">
-        <MDBRow className="mb-5">
-          {/* LEFT: Image Gallery */}
-          <MDBCol md="6">
-            <MDBRow className="g-3">
+        <MDBRow className="mb-5 gx-4 gy-4 flex-column flex-md-row">
+          <MDBCol md="6" className="mb-4">
+            {/* Mobile view slider */}
+            <div className="d-md-none mb-4">
+              <Slider {...sliderSettings}>
+                {product.images.map((img, i) => (
+                  <div key={`mobile-${i}`}>
+                    <img
+                      src={img}
+                      alt={`Product ${i + 1}`}
+                      className="d-block w-100"
+                      style={{ height: "70vw", objectFit: "cover" }}
+                    />
+                  </div>
+                ))}
+              </Slider>
+            </div>
+
+            {/* Desktop view grid */}
+            <div className="d-none d-md-flex flex-wrap gap-3 justify-content-between">
               {product.images.slice(0, 4).map((img, i) => (
-                <MDBCol key={i} xs="6">
+                <div
+                  key={i}
+                  className="rounded overflow-hidden"
+                  style={{
+                    width: "48%",
+                    aspectRatio: "1 / 1",
+                    marginBottom: "1rem",
+                  }}
+                >
                   <img
                     src={img}
                     alt={`Product ${i + 1}`}
-                    className="img-fluid rounded"
-                    style={{ objectFit: "cover", height: "180px" }}
+                    className="img-fluid"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
-                </MDBCol>
+                </div>
               ))}
+
               {product.images[4] && (
-                <MDBCol xs="12">
+                <div className="w-100">
                   <img
                     src={product.images[4]}
-                    alt="Main"
+                    alt="Main large"
                     className="img-fluid rounded"
-                    style={{ objectFit: "cover", height: "350px", width: "100%" }}
+                    style={{
+                      objectFit: "cover",
+                      width: "100%",
+                      height: "auto",
+                      marginTop: "1rem",
+                    }}
                   />
-                </MDBCol>
+                </div>
               )}
-            </MDBRow>
+            </div>
           </MDBCol>
 
-          {/* RIGHT: Product Info */}
           <MDBCol md="6">
-            <h2 className="fw-bold mb-2" style={{ fontSize: "28px" }}>{product.name}</h2>
-            <h4 style={{ color: "#603813" }}>Rs. {product.price}</h4>
+            <h2 className="fw-bold mb-2" style={{ fontSize: "clamp(20px, 5vw, 28px)" }}>{product.name}</h2>
+            <h4 style={{ color: "#603813", fontSize: "clamp(16px, 4vw, 22px)" }}>Rs. {product.price}</h4>
 
-            {/* Size Buttons */}
             <div className="mt-4">
               <p className="fw-bold mb-2">SELECT SIZE</p>
               <div className="d-flex flex-wrap gap-2">
@@ -101,16 +140,16 @@ const ProductPage = () => {
                 ))}
               </div>
               <p className="text-muted mt-1" style={{ fontSize: "13px" }}>
-                📏 <span style={{ textDecoration: "underline" }}>Size Guide</span>
+                <span style={{ textDecoration: "underline" }}>Size Guide</span>
               </p>
             </div>
 
-            {/* Quantity & Add to Cart */}
             <div className="d-flex align-items-center gap-3 my-4">
               <MDBBtn outline color="dark" className="rounded-0">-</MDBBtn>
               <span style={{ fontSize: "18px" }}>1</span>
               <MDBBtn outline color="dark" className="rounded-0">+</MDBBtn>
             </div>
+
             <MDBBtn
               className="w-100 rounded-0"
               style={{
@@ -124,14 +163,13 @@ const ProductPage = () => {
               ADD TO CART
             </MDBBtn>
 
-            {/* Accordions */}
             {[
-              { label: "Description", content: product.description || "No Description" },
-              { label: "Product Details", content: "Material: " + (product.material || "N/A") },
-              { label: "Product Care", content: "Handle with care. Dry clean preferred." },
-              { label: "Shipping", content: "Ships in 3-5 business days." },
-              { label: "Exchange and Return", content: "Exchange allowed within 7 days." },
-            ].map(({ label, content }) => (
+              "Description",
+              "Product Details",
+              "Product Care",
+              "Shipping",
+              "Exchange and Return",
+            ].map((label) => (
               <div key={label} className="mt-4 border-top pt-2">
                 <div
                   className="d-flex justify-content-between align-items-center"
@@ -143,7 +181,7 @@ const ProductPage = () => {
                 </div>
                 <MDBCollapse show={openSections[label]}>
                   <p className="text-muted mt-2" style={{ fontSize: "14px" }}>
-                    {content}
+                    {product[label.toLowerCase().replace(/ /g, "")] || "Information not available."}
                   </p>
                 </MDBCollapse>
               </div>
@@ -151,9 +189,8 @@ const ProductPage = () => {
           </MDBCol>
         </MDBRow>
 
-        {/* You May Also Like */}
         <h4 className="mb-4">You May Also Like</h4>
-        <MDBRow className="g-4">
+        <MDBRow className="g-3">
           {products
             .filter((p) => p._id !== product._id)
             .slice(0, 4)

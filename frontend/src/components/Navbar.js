@@ -68,7 +68,7 @@ const Navbar = () => {
               {[
                 { label: "New Arrivals", link: "/product-list" },
                 { label: "Collections", link: "/collections" },
-                { label: "Best Sellers", link: "/best-sellers" },
+                { label: "Best Sellers", link: "/product/:id" },
                 { label: "Shop By", link: "/test" },
               ].map((item) => (
                 <Link key={item.label} to={item.link} style={{ textDecoration: "none" }}>
@@ -94,7 +94,7 @@ const Navbar = () => {
               {[
                 { label: "Fabric & Care", link: "/fabric-care" },
                 { label: "FAQ", link: "/faq" },
-                { label: "Brand Story", link: "/productpage" },
+                { label: "Brand Story", link: "/product-list" },
                 { label: "Our Story", link: "/our-story" },
               ].map((item) => (
                 <Link key={item.label} to={item.link} style={{ textDecoration: "none" }}>
