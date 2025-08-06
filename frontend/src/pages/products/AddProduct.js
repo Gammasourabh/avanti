@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import { addProduct, updateProduct } from "../../features/products/productSlice";
+import {
+  addProduct,
+  updateProduct,
+} from "../../features/products/productSlice";
 import { toast } from "react-hot-toast";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Editor } from '@tinymce/tinymce-react';
-import { 
-  Form, 
-  Button, 
-  Accordion, 
-  Card, 
-  Row, 
-  Col, 
+import { Editor } from "@tinymce/tinymce-react";
+import {
+  Form,
+  Button,
+  Accordion,
+  Card,
+  Row,
+  Col,
   Container,
   Image,
   Badge,
@@ -21,21 +24,21 @@ import {
   Tooltip,
   OverlayTrigger,
   FloatingLabel,
-  Modal
+  Modal,
 } from "react-bootstrap";
-import { 
-  FiImage, 
-  FiSave, 
-  FiX, 
-  FiPlus, 
-  FiTrash2, 
-  FiEdit3, 
+import {
+  FiImage,
+  FiSave,
+  FiX,
+  FiPlus,
+  FiTrash2,
+  FiEdit3,
   FiPackage,
   FiTag,
   FiDollarSign,
   FiPercent,
   FiFileText,
-  FiInfo
+  FiInfo,
 } from "react-icons/fi";
 
 const AddProduct = () => {
@@ -64,7 +67,18 @@ const AddProduct = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [activeStep, setActiveStep] = useState(1);
+  const [categories, setCategories] = useState([]);
 
+  useEffect(() => {
+    // Fetch available categories from the backend
+    axios
+      .get("/api/categories")
+      .then((res) => setCategories(res.data.categories || []))
+      .catch((err) => {
+        console.error("Error fetching categories:", err);
+        setCategories([]); // fallback
+      });
+  }, []);
   // Load product data in edit mode
   useEffect(() => {
     if (id) {
@@ -84,7 +98,8 @@ const AddProduct = () => {
             sku: data.sku || "",
             discount: data.discount || "",
             discountPrice: data.discountPrice || "",
-            instructions: data.instructions?.length > 0 ? data.instructions : [""],
+            instructions:
+              data.instructions?.length > 0 ? data.instructions : [""],
             material: data.material || "",
           });
 
@@ -110,16 +125,18 @@ const AddProduct = () => {
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
-    
+
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const invalidFiles = files.filter(
+      (file) => !validTypes.includes(file.type)
+    );
+
     if (invalidFiles.length > 0) {
       toast.error("Please select only image files (JPEG, PNG, WebP)");
       return;
     }
 
-    const oversizedFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    const oversizedFiles = files.filter((file) => file.size > 5 * 1024 * 1024);
     if (oversizedFiles.length > 0) {
       toast.error("File size should be less than 5MB");
       return;
@@ -128,7 +145,7 @@ const AddProduct = () => {
     // Simulate upload progress
     setUploadProgress(0);
     const interval = setInterval(() => {
-      setUploadProgress(prev => {
+      setUploadProgress((prev) => {
         if (prev >= 100) {
           clearInterval(interval);
           return 100;
@@ -149,27 +166,31 @@ const AddProduct = () => {
   };
 
   const removeImage = (imageId) => {
-    const imageIndex = previewImages.findIndex(img => img.id === imageId);
+    const imageIndex = previewImages.findIndex((img) => img.id === imageId);
     if (imageIndex === -1) return;
 
     const imageToRemove = previewImages[imageIndex];
-    
+
     if (imageToRemove.fromServer) {
-      const serverImageIndex = existingImages.findIndex(url => url === imageToRemove.preview);
+      const serverImageIndex = existingImages.findIndex(
+        (url) => url === imageToRemove.preview
+      );
       if (serverImageIndex !== -1) {
-        setExistingImages(prev => prev.filter((_, index) => index !== serverImageIndex));
+        setExistingImages((prev) =>
+          prev.filter((_, index) => index !== serverImageIndex)
+        );
       }
     } else {
-      const newImageIndex = images.findIndex(img => 
-        URL.createObjectURL(img) === imageToRemove.preview
+      const newImageIndex = images.findIndex(
+        (img) => URL.createObjectURL(img) === imageToRemove.preview
       );
       if (newImageIndex !== -1) {
-        setImages(prev => prev.filter((_, index) => index !== newImageIndex));
+        setImages((prev) => prev.filter((_, index) => index !== newImageIndex));
       }
       URL.revokeObjectURL(imageToRemove.preview);
     }
 
-    setPreviewImages(prev => prev.filter(img => img.id !== imageId));
+    setPreviewImages((prev) => prev.filter((img) => img.id !== imageId));
   };
 
   const handleInstructionChange = (index, value) => {
@@ -194,27 +215,43 @@ const AddProduct = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
 
     // Auto-calculate discount price
-    if (name === 'price' || name === 'discount') {
-      const price = name === 'price' ? parseFloat(value) || 0 : parseFloat(form.price) || 0;
-      const discount = name === 'discount' ? parseFloat(value) || 0 : parseFloat(form.discount) || 0;
-      
+    if (name === "price" || name === "discount") {
+      const price =
+        name === "price" ? parseFloat(value) || 0 : parseFloat(form.price) || 0;
+      const discount =
+        name === "discount"
+          ? parseFloat(value) || 0
+          : parseFloat(form.discount) || 0;
+
       if (price > 0 && discount > 0) {
-        const discountPrice = price - (price * discount / 100);
-        setForm(prev => ({ ...prev, discountPrice: discountPrice.toFixed(2) }));
+        const discountPrice = price - (price * discount) / 100;
+        setForm((prev) => ({
+          ...prev,
+          discountPrice: discountPrice.toFixed(2),
+        }));
       }
     }
   };
 
   const handleDescriptionChange = (content) => {
-    setForm(prev => ({ ...prev, description: content }));
+    setForm((prev) => ({ ...prev, description: content }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const requiredFields = ["name", "price", "category", "description", "stock", "sku"];
-    const missingFields = requiredFields.filter(field => !form[field]?.toString().trim());
+    const requiredFields = [
+      "name",
+      "price",
+      "category",
+      "description",
+      "stock",
+      "sku",
+    ];
+    const missingFields = requiredFields.filter(
+      (field) => !form[field]?.toString().trim()
+    );
 
     if (missingFields.length > 0) {
       toast.error(`Please fill in: ${missingFields.join(", ")}`);
@@ -225,16 +262,22 @@ const AddProduct = () => {
     const formData = new FormData();
 
     Object.entries(form).forEach(([key, value]) => {
-      if (key === 'instructions') {
-        value.filter(instruction => instruction.trim()).forEach(instruction => {
-          formData.append('instructions', instruction);
-        });
-      } else if (key === 'sizes') {
-        const sizesArray = typeof value === 'string' 
-          ? value.split(',').map(s => s.trim()).filter(s => s)
-          : value;
-        sizesArray.forEach(size => {
-          formData.append('sizes', size);
+      if (key === "instructions") {
+        value
+          .filter((instruction) => instruction.trim())
+          .forEach((instruction) => {
+            formData.append("instructions", instruction);
+          });
+      } else if (key === "sizes") {
+        const sizesArray =
+          typeof value === "string"
+            ? value
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s)
+            : value;
+        sizesArray.forEach((size) => {
+          formData.append("sizes", size);
         });
       } else {
         formData.append(key, value);
@@ -246,7 +289,7 @@ const AddProduct = () => {
     });
 
     if (id && existingImages.length > 0) {
-      existingImages.forEach(imageUrl => {
+      existingImages.forEach((imageUrl) => {
         formData.append("existingImages", imageUrl);
       });
     }
@@ -259,7 +302,7 @@ const AddProduct = () => {
       } else {
         await dispatch(addProduct(formData)).unwrap();
         toast.success("Product added successfully!");
-        
+
         setForm({
           name: "",
           price: "",
@@ -286,9 +329,7 @@ const AddProduct = () => {
     }
   };
 
-  const renderTooltip = (text) => (
-    <Tooltip>{text}</Tooltip>
-  );
+  const renderTooltip = (text) => <Tooltip>{text}</Tooltip>;
 
   if (loading && id) {
     return (
@@ -304,11 +345,23 @@ const AddProduct = () => {
   }
 
   return (
-    <Container fluid className="py-3 py-md-4" style={{ background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)', minHeight: '100vh' }}>
+    <Container
+      fluid
+      className="py-3 py-md-4"
+      style={{
+        background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
+        minHeight: "100vh",
+      }}
+    >
       <Row className="justify-content-center">
         <Col xs={12} xl={11} xxl={10}>
           {/* Header Section with Gradient */}
-          <Card className="shadow-lg border-0 mb-4" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <Card
+            className="shadow-lg border-0 mb-4"
+            style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}
+          >
             <Card.Body className="text-white">
               <Row className="align-items-center">
                 <Col xs={12} md={8}>
@@ -317,15 +370,22 @@ const AddProduct = () => {
                       <FiEdit3 size={32} />
                     </div>
                     <div>
-                      <h2 className="mb-1 fw-bold">{id ? "Edit Product" : "Create New Product"}</h2>
+                      <h2 className="mb-1 fw-bold">
+                        {id ? "Edit Product" : "Create New Product"}
+                      </h2>
                       <p className="mb-0 opacity-75">
-                        {id ? "Update your product details" : "Add a new product to your inventory"}
+                        {id
+                          ? "Update your product details"
+                          : "Add a new product to your inventory"}
                       </p>
                     </div>
                   </div>
                 </Col>
                 <Col xs={12} md={4} className="text-md-end mt-3 mt-md-0">
-                  <Badge bg={id ? "warning" : "success"} className="px-4 py-2 fs-6">
+                  <Badge
+                    bg={id ? "warning" : "success"}
+                    className="px-4 py-2 fs-6"
+                  >
                     <FiTag className="me-2" />
                     {id ? "Edit Mode" : "Create Mode"}
                   </Badge>
@@ -338,7 +398,10 @@ const AddProduct = () => {
             <Row className="g-4">
               {/* Image Upload Section */}
               <Col xs={12} lg={5}>
-                <Card className="shadow-sm border-0 h-100" style={{ borderRadius: '15px' }}>
+                <Card
+                  className="shadow-sm border-0 h-100"
+                  style={{ borderRadius: "15px" }}
+                >
                   <Card.Header className="bg-transparent border-0 pt-4">
                     <div className="d-flex align-items-center justify-content-between">
                       <div className="d-flex align-items-center">
@@ -354,13 +417,15 @@ const AddProduct = () => {
                     {/* Upload Progress */}
                     {uploadProgress > 0 && uploadProgress < 100 && (
                       <div className="mb-3">
-                        <ProgressBar 
-                          now={uploadProgress} 
+                        <ProgressBar
+                          now={uploadProgress}
                           label={`${uploadProgress}%`}
                           className="mb-2"
-                          style={{ height: '8px' }}
+                          style={{ height: "8px" }}
                         />
-                        <small className="text-muted">Uploading images...</small>
+                        <small className="text-muted">
+                          Uploading images...
+                        </small>
                       </div>
                     )}
 
@@ -374,22 +439,25 @@ const AddProduct = () => {
                                 src={img.preview}
                                 alt="Preview"
                                 className="w-100 rounded-3 shadow-sm"
-                                style={{ 
-                                  height: "120px", 
+                                style={{
+                                  height: "120px",
                                   objectFit: "cover",
-                                  cursor: 'pointer',
-                                  transition: 'transform 0.2s'
+                                  cursor: "pointer",
+                                  transition: "transform 0.2s",
                                 }}
                                 onClick={() => setShowPreview(true)}
                                 onMouseEnter={(e) => {
-                                  e.target.style.transform = 'scale(1.05)';
+                                  e.target.style.transform = "scale(1.05)";
                                 }}
                                 onMouseLeave={(e) => {
-                                  e.target.style.transform = 'scale(1)';
+                                  e.target.style.transform = "scale(1)";
                                 }}
                               />
                               <div className="position-absolute top-0 end-0 p-2">
-                                <OverlayTrigger placement="top" overlay={renderTooltip("Remove Image")}>
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={renderTooltip("Remove Image")}
+                                >
                                   <Button
                                     variant="danger"
                                     size="sm"
@@ -402,7 +470,10 @@ const AddProduct = () => {
                                 </OverlayTrigger>
                               </div>
                               {img.fromServer && (
-                                <Badge bg="secondary" className="position-absolute bottom-0 start-0 m-2">
+                                <Badge
+                                  bg="secondary"
+                                  className="position-absolute bottom-0 start-0 m-2"
+                                >
                                   Saved
                                 </Badge>
                               )}
@@ -414,34 +485,42 @@ const AddProduct = () => {
 
                     {/* Upload Area */}
                     <div className="text-center">
-                      <div 
+                      <div
                         className="border border-2 border-dashed rounded-3 p-4 mb-3"
-                        style={{ 
-                          borderColor: '#e3f2fd',
-                          background: 'linear-gradient(45deg, #f8f9ff, #ffffff)',
-                          cursor: 'pointer',
-                          transition: 'all 0.3s ease'
+                        style={{
+                          borderColor: "#e3f2fd",
+                          background:
+                            "linear-gradient(45deg, #f8f9ff, #ffffff)",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
                         }}
-                        onClick={() => document.getElementById("image-upload").click()}
+                        onClick={() =>
+                          document.getElementById("image-upload").click()
+                        }
                         onMouseEnter={(e) => {
-                          e.target.style.borderColor = '#2196f3';
-                          e.target.style.background = 'linear-gradient(45deg, #e3f2fd, #f8f9ff)';
+                          e.target.style.borderColor = "#2196f3";
+                          e.target.style.background =
+                            "linear-gradient(45deg, #e3f2fd, #f8f9ff)";
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.borderColor = '#e3f2fd';
-                          e.target.style.background = 'linear-gradient(45deg, #f8f9ff, #ffffff)';
+                          e.target.style.borderColor = "#e3f2fd";
+                          e.target.style.background =
+                            "linear-gradient(45deg, #f8f9ff, #ffffff)";
                         }}
                       >
                         <FiPlus size={32} className="text-primary mb-2" />
                         <h6 className="text-primary mb-2">
-                          {previewImages.length === 0 ? "Upload Product Images" : "Add More Images"}
+                          {previewImages.length === 0
+                            ? "Upload Product Images"
+                            : "Add More Images"}
                         </h6>
                         <small className="text-muted">
-                          Drag & drop or click to browse<br />
+                          Drag & drop or click to browse
+                          <br />
                           Max 10 images, 5MB each
                         </small>
                       </div>
-                      
+
                       <Form.Control
                         id="image-upload"
                         type="file"
@@ -451,11 +530,17 @@ const AddProduct = () => {
                         onChange={handleImageChange}
                         disabled={previewImages.length >= 10}
                       />
-                      
+
                       <div className="d-flex justify-content-center gap-2 flex-wrap">
-                        <Badge bg="light" text="dark" className="px-3 py-2">JPEG</Badge>
-                        <Badge bg="light" text="dark" className="px-3 py-2">PNG</Badge>
-                        <Badge bg="light" text="dark" className="px-3 py-2">WebP</Badge>
+                        <Badge bg="light" text="dark" className="px-3 py-2">
+                          JPEG
+                        </Badge>
+                        <Badge bg="light" text="dark" className="px-3 py-2">
+                          PNG
+                        </Badge>
+                        <Badge bg="light" text="dark" className="px-3 py-2">
+                          WebP
+                        </Badge>
                       </div>
                     </div>
                   </Card.Body>
@@ -465,7 +550,10 @@ const AddProduct = () => {
               {/* Main Form Section */}
               <Col xs={12} lg={7}>
                 {/* Basic Information */}
-                <Card className="shadow-sm border-0 mb-4" style={{ borderRadius: '15px' }}>
+                <Card
+                  className="shadow-sm border-0 mb-4"
+                  style={{ borderRadius: "15px" }}
+                >
                   <Card.Header className="bg-transparent border-0 pt-4">
                     <div className="d-flex align-items-center">
                       <FiFileText className="text-primary me-2" size={20} />
@@ -483,21 +571,28 @@ const AddProduct = () => {
                             onChange={handleInputChange}
                             placeholder="Product Name"
                             required
-                            style={{ borderRadius: '10px' }}
+                            style={{ borderRadius: "10px" }}
                           />
                         </FloatingLabel>
                       </Col>
                       <Col xs={12} md={6}>
                         <FloatingLabel label="Category *" className="mb-0">
-                          <Form.Control
-                            type="text"
+                          <Form.Select
                             name="category"
                             value={form.category}
                             onChange={handleInputChange}
-                            placeholder="Category"
                             required
-                            style={{ borderRadius: '10px' }}
-                          />
+                            style={{ borderRadius: "10px" }}
+                          >
+                            <option value="" disabled>
+                              Select a category
+                            </option>
+                            {categories.map((cat) => (
+                              <option key={cat._id} value={cat.name}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </Form.Select>
                         </FloatingLabel>
                       </Col>
 
@@ -508,7 +603,9 @@ const AddProduct = () => {
                           Price *
                         </Form.Label>
                         <InputGroup className="mb-0">
-                          <InputGroup.Text style={{ borderRadius: '10px 0 0 10px' }}>
+                          <InputGroup.Text
+                            style={{ borderRadius: "10px 0 0 10px" }}
+                          >
                             <FiDollarSign />
                           </InputGroup.Text>
                           <Form.Control
@@ -520,7 +617,7 @@ const AddProduct = () => {
                             onChange={handleInputChange}
                             placeholder="0.00"
                             required
-                            style={{ borderRadius: '0 10px 10px 0' }}
+                            style={{ borderRadius: "0 10px 10px 0" }}
                           />
                         </InputGroup>
                       </Col>
@@ -530,7 +627,9 @@ const AddProduct = () => {
                           Discount (%)
                         </Form.Label>
                         <InputGroup className="mb-0">
-                          <InputGroup.Text style={{ borderRadius: '10px 0 0 10px' }}>
+                          <InputGroup.Text
+                            style={{ borderRadius: "10px 0 0 10px" }}
+                          >
                             <FiPercent />
                           </InputGroup.Text>
                           <Form.Control
@@ -542,7 +641,7 @@ const AddProduct = () => {
                             value={form.discount}
                             onChange={handleInputChange}
                             placeholder="0"
-                            style={{ borderRadius: '0 10px 10px 0' }}
+                            style={{ borderRadius: "0 10px 10px 0" }}
                           />
                         </InputGroup>
                       </Col>
@@ -552,7 +651,9 @@ const AddProduct = () => {
                           Final Price
                         </Form.Label>
                         <InputGroup className="mb-0">
-                          <InputGroup.Text style={{ borderRadius: '10px 0 0 10px' }}>
+                          <InputGroup.Text
+                            style={{ borderRadius: "10px 0 0 10px" }}
+                          >
                             <FiDollarSign />
                           </InputGroup.Text>
                           <Form.Control
@@ -563,7 +664,11 @@ const AddProduct = () => {
                             value={form.discountPrice}
                             onChange={handleInputChange}
                             placeholder="Auto-calculated"
-                            style={{ borderRadius: '0 10px 10px 0', backgroundColor: form.discount > 0 ? '#e8f5e8' : 'white' }}
+                            style={{
+                              borderRadius: "0 10px 10px 0",
+                              backgroundColor:
+                                form.discount > 0 ? "#e8f5e8" : "white",
+                            }}
                           />
                         </InputGroup>
                       </Col>
@@ -573,14 +678,25 @@ const AddProduct = () => {
                         <Form.Label className="fw-semibold text-muted small mb-3">
                           <FiEdit3 className="me-1" />
                           Product Description *
-                          <OverlayTrigger 
-                            placement="top" 
-                            overlay={renderTooltip("Use the toolbar to format your text with bold, italic, colors, and more!")}
+                          <OverlayTrigger
+                            placement="top"
+                            overlay={renderTooltip(
+                              "Use the toolbar to format your text with bold, italic, colors, and more!"
+                            )}
                           >
-                            <FiInfo className="ms-2 text-info" style={{ cursor: 'help' }} />
+                            <FiInfo
+                              className="ms-2 text-info"
+                              style={{ cursor: "help" }}
+                            />
                           </OverlayTrigger>
                         </Form.Label>
-                        <div style={{ borderRadius: '15px', overflow: 'hidden', border: '1px solid #dee2e6' }}>
+                        <div
+                          style={{
+                            borderRadius: "15px",
+                            overflow: "hidden",
+                            border: "1px solid #dee2e6",
+                          }}
+                        >
                           <Editor
                             apiKey="enxslos9eh7zn5wvakov97f2rbuqv68c9718amhcxvdsb3yj" // Get free API key from TinyMCE
                             value={form.description}
@@ -589,24 +705,43 @@ const AddProduct = () => {
                               height: 300,
                               menubar: false,
                               plugins: [
-                                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-                                'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
-                                'fullscreen', 'insertdatetime', 'media', 'table', 'help', 'wordcount',
-                                'emoticons', 'template', 'codesample'
+                                "advlist",
+                                "autolink",
+                                "lists",
+                                "link",
+                                "image",
+                                "charmap",
+                                "preview",
+                                "anchor",
+                                "searchreplace",
+                                "visualblocks",
+                                "code",
+                                "fullscreen",
+                                "insertdatetime",
+                                "media",
+                                "table",
+                                "help",
+                                "wordcount",
+                                "emoticons",
+                                "template",
+                                "codesample",
                               ],
-                              toolbar: 'undo redo | blocks | bold italic underline strikethrough | ' +
-                                'alignleft aligncenter alignright alignjustify | ' +
-                                'bullist numlist outdent indent | removeformat | ' +
-                                'forecolor backcolor | fontsize fontfamily | ' +
-                                'link image media | emoticons | help',
-                              content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; line-height: 1.4; }',
+                              toolbar:
+                                "undo redo | blocks | bold italic underline strikethrough | " +
+                                "alignleft aligncenter alignright alignjustify | " +
+                                "bullist numlist outdent indent | removeformat | " +
+                                "forecolor backcolor | fontsize fontfamily | " +
+                                "link image media | emoticons | help",
+                              content_style:
+                                "body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; line-height: 1.4; }",
                               branding: false,
                               resize: false,
                               elementpath: false,
                               statusbar: false,
                               content_css: false,
-                              skin: 'oxide',
-                              placeholder: 'Write a detailed product description...'
+                              skin: "oxide",
+                              placeholder:
+                                "Write a detailed product description...",
                             }}
                           />
                         </div>
@@ -616,17 +751,26 @@ const AddProduct = () => {
                 </Card>
 
                 {/* Enhanced Accordion Sections */}
-                <Accordion defaultActiveKey={["0", "1"]} alwaysOpen className="shadow-sm">
+                <Accordion
+                  defaultActiveKey={["0", "1"]}
+                  alwaysOpen
+                  className="shadow-sm"
+                >
                   {/* Stock Management */}
-                  <Accordion.Item eventKey="0" style={{ borderRadius: '15px 15px 0 0', border: 'none' }}>
-                    <Accordion.Header style={{ borderRadius: '15px 15px 0 0' }}>
+                  <Accordion.Item
+                    eventKey="0"
+                    style={{ borderRadius: "15px 15px 0 0", border: "none" }}
+                  >
+                    <Accordion.Header style={{ borderRadius: "15px 15px 0 0" }}>
                       <div className="d-flex align-items-center">
                         <div className="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
                           <FiPackage className="text-primary" size={18} />
                         </div>
                         <div>
                           <h6 className="mb-0 fw-bold">Inventory Management</h6>
-                          <small className="text-muted">Stock, SKU, and sizing information</small>
+                          <small className="text-muted">
+                            Stock, SKU, and sizing information
+                          </small>
                         </div>
                       </div>
                     </Accordion.Header>
@@ -640,17 +784,20 @@ const AddProduct = () => {
                               value={form.sku}
                               onChange={handleInputChange}
                               placeholder="SKU-001"
-                              style={{ 
-                                textTransform: 'uppercase',
-                                borderRadius: '10px',
-                                fontFamily: 'monospace'
+                              style={{
+                                textTransform: "uppercase",
+                                borderRadius: "10px",
+                                fontFamily: "monospace",
                               }}
                               required
                             />
                           </FloatingLabel>
                         </Col>
                         <Col xs={12} sm={6} md={4}>
-                          <FloatingLabel label="Stock Quantity *" className="mb-0">
+                          <FloatingLabel
+                            label="Stock Quantity *"
+                            className="mb-0"
+                          >
                             <Form.Control
                               type="number"
                               min="0"
@@ -659,19 +806,22 @@ const AddProduct = () => {
                               onChange={handleInputChange}
                               placeholder="0"
                               required
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: "10px" }}
                             />
                           </FloatingLabel>
                         </Col>
                         <Col xs={12} md={4}>
-                          <FloatingLabel label="Available Sizes" className="mb-0">
+                          <FloatingLabel
+                            label="Available Sizes"
+                            className="mb-0"
+                          >
                             <Form.Control
                               type="text"
                               name="sizes"
                               value={form.sizes}
                               onChange={handleInputChange}
                               placeholder="S, M, L, XL"
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: "10px" }}
                             />
                           </FloatingLabel>
                           <Form.Text className="text-muted small mt-1">
@@ -684,15 +834,22 @@ const AddProduct = () => {
                   </Accordion.Item>
 
                   {/* Instructions & Material */}
-                  <Accordion.Item eventKey="1" style={{ borderRadius: '0 0 15px 15px', border: 'none' }}>
+                  <Accordion.Item
+                    eventKey="1"
+                    style={{ borderRadius: "0 0 15px 15px", border: "none" }}
+                  >
                     <Accordion.Header>
                       <div className="d-flex align-items-center">
                         <div className="bg-success bg-opacity-10 rounded-circle p-2 me-3">
                           <FiEdit3 className="text-success" size={18} />
                         </div>
                         <div>
-                          <h6 className="mb-0 fw-bold">Care Instructions & Materials</h6>
-                          <small className="text-muted">Product care guide and material information</small>
+                          <h6 className="mb-0 fw-bold">
+                            Care Instructions & Materials
+                          </h6>
+                          <small className="text-muted">
+                            Product care guide and material information
+                          </small>
                         </div>
                       </div>
                     </Accordion.Header>
@@ -706,26 +863,36 @@ const AddProduct = () => {
                             <div key={i} className="d-flex gap-2 mb-3">
                               <div className="flex-grow-1">
                                 <InputGroup>
-                                  <InputGroup.Text style={{ borderRadius: '10px 0 0 10px' }}>
+                                  <InputGroup.Text
+                                    style={{ borderRadius: "10px 0 0 10px" }}
+                                  >
                                     {i + 1}
                                   </InputGroup.Text>
                                   <Form.Control
                                     type="text"
                                     placeholder={`Care instruction ${i + 1}`}
                                     value={instruction}
-                                    onChange={(e) => handleInstructionChange(i, e.target.value)}
-                                    style={{ borderRadius: '0 10px 10px 0', borderLeft: 'none' }}
+                                    onChange={(e) =>
+                                      handleInstructionChange(i, e.target.value)
+                                    }
+                                    style={{
+                                      borderRadius: "0 10px 10px 0",
+                                      borderLeft: "none",
+                                    }}
                                   />
                                 </InputGroup>
                               </div>
                               {form.instructions.length > 1 && (
-                                <OverlayTrigger placement="top" overlay={renderTooltip("Remove Instruction")}>
+                                <OverlayTrigger
+                                  placement="top"
+                                  overlay={renderTooltip("Remove Instruction")}
+                                >
                                   <Button
                                     variant="outline-danger"
                                     size="sm"
                                     onClick={() => removeInstruction(i)}
                                     className="rounded-circle p-2"
-                                    style={{ width: '40px', height: '40px' }}
+                                    style={{ width: "40px", height: "40px" }}
                                   >
                                     <FiTrash2 size={14} />
                                   </Button>
@@ -752,7 +919,7 @@ const AddProduct = () => {
                               value={form.material}
                               onChange={handleInputChange}
                               placeholder="e.g., 100% Cotton, Polyester blend"
-                              style={{ borderRadius: '10px' }}
+                              style={{ borderRadius: "10px" }}
                             />
                           </FloatingLabel>
                         </Col>
@@ -762,7 +929,10 @@ const AddProduct = () => {
                 </Accordion>
 
                 {/* Action Buttons */}
-                <Card className="shadow-sm border-0 mt-4" style={{ borderRadius: '15px' }}>
+                <Card
+                  className="shadow-sm border-0 mt-4"
+                  style={{ borderRadius: "15px" }}
+                >
                   <Card.Body>
                     <Row className="align-items-center">
                       <Col xs={12} md={6}>
@@ -788,15 +958,18 @@ const AddProduct = () => {
                             disabled={loading}
                             className="rounded-pill px-4 shadow"
                             style={{
-                              background: id 
-                                ? 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
-                                : 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-                              border: 'none'
+                              background: id
+                                ? "linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)"
+                                : "linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)",
+                              border: "none",
                             }}
                           >
                             {loading ? (
                               <>
-                                <span className="spinner-border spinner-border-sm me-2" role="status" />
+                                <span
+                                  className="spinner-border spinner-border-sm me-2"
+                                  role="status"
+                                />
                                 {id ? "Updating..." : "Creating..."}
                               </>
                             ) : (
@@ -818,17 +991,22 @@ const AddProduct = () => {
       </Row>
 
       {/* Image Preview Modal */}
-      <Modal show={showPreview} onHide={() => setShowPreview(false)} size="lg" centered>
+      <Modal
+        show={showPreview}
+        onHide={() => setShowPreview(false)}
+        size="lg"
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Image Preview</Modal.Title>
         </Modal.Header>
         <Modal.Body className="text-center">
           {previewImages.length > 0 && (
-            <Image 
-              src={previewImages[0]?.preview} 
-              alt="Preview" 
+            <Image
+              src={previewImages[0]?.preview}
+              alt="Preview"
               className="img-fluid rounded"
-              style={{ maxHeight: '70vh' }}
+              style={{ maxHeight: "70vh" }}
             />
           )}
         </Modal.Body>

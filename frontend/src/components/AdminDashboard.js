@@ -36,6 +36,8 @@ const menuData = [
     items: [
       { label: 'Add Product', to: '/admin/add-product' },
       { label: 'All Products', to: '/admin/all-product' },
+      { label: 'bulk import export', to: 'bulk-import-export' },
+      { label: 'catagory', to: 'product-categories' },
     ],
   },
   {

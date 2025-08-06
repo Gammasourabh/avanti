@@ -14,7 +14,9 @@ import PublicRoute from "./pages/PublicRoute";
 import VerifyEmail from "./pages/VerifyEmail";
 import AddProduct from "./pages/products/AddProduct";
 import ProductListPage from "./pages/products/ProductListPage";
-import  AllProducts  from "./pages/products/AllProducts";
+import AllProducts from "./pages/products/AllProducts";
+import BulkProductImportExport from "./pages/products/BulkProductImportExport";
+import ProductCategories from "./pages/products/ProductCategories";
 
 const App = () => {
   return (
@@ -22,13 +24,15 @@ const App = () => {
       <Toaster position="top-center" />
 
       <Routes>
+        {/* Public pages */}
         <Route path="/" element={<Home />} />
         <Route path="/best-sellers" element={<BestSeller />} />
         <Route path="/our-story" element={<AboutUs />} />
         <Route path="/product/:id" element={<ProductPage />} />
-
         <Route path="/fabric-care" element={<FabricAndCare />} />
-        <Route path="/product-list" element={<ProductListPage/>}/>
+        <Route path="/product-list" element={<ProductListPage />} />
+
+        {/* Authentication routes */}
         <Route
           path="/login"
           element={
@@ -37,8 +41,6 @@ const App = () => {
             </PublicRoute>
           }
         />
-          <Route path="/admin/add-product/:id" element={<AddProduct />} />
-
         <Route
           path="/register"
           element={
@@ -48,19 +50,27 @@ const App = () => {
           }
         />
         <Route path="/verify-email/:token" element={<VerifyEmail />} />
+
+        {/* Admin Routes: Nested under /admin with AdminDashboard as layout */}
         <Route
-          path="/admindashboard"
+          path="/admin"
           element={
             <AdminRoute>
               <AdminDashboard />
             </AdminRoute>
           }
         >
-         
-          {/* You can add more nested admin routes here */}
+          {/* Nested admin child routes */}
+          <Route path="add-product" element={<AddProduct />} />
+          <Route path="add-product/:id" element={<AddProduct />} />
+          <Route path="all-product" element={<AllProducts />} />
+          <Route
+            path="bulk-import-export"
+            element={<BulkProductImportExport />}
+          />
+          <Route path="product-categories" element={<ProductCategories />} />
+          {/* Add more admin routes here as needed */}
         </Route>
-         <Route path="/admin/add-product" element={<AddProduct />} />
-          <Route path="/admin/all-product" element={<AllProducts />} />
       </Routes>
     </>
   );
