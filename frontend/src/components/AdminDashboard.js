@@ -34,8 +34,8 @@ const menuData = [
     label: 'Products',
     icon: <FiPackage />,
     items: [
-      { label: 'Add Product', to: '/admin/addproduct' },
-      { label: 'All Products', to: '/admin/allproduct' },
+      { label: 'Add Product', to: '/admin/add-product' },
+      { label: 'All Products', to: '/admin/all-product' },
     ],
   },
   {

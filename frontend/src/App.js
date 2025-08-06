@@ -59,8 +59,8 @@ const App = () => {
          
           {/* You can add more nested admin routes here */}
         </Route>
-         <Route path="/admin/addproduct" element={<AddProduct />} />
-          <Route path="/admin/allproduct" element={<AllProducts />} />
+         <Route path="/admin/add-product" element={<AddProduct />} />
+          <Route path="/admin/all-product" element={<AllProducts />} />
       </Routes>
     </>
   );
