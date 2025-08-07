@@ -8,48 +8,59 @@ import {
   Container,
   Menu,
   MenuItem,
+  Badge,
 } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
-import ShoppingCartOutlinedIcon from "@mui/icons-material/ShoppingCartOutlined";
-import AccountCircleOutlinedIcon from "@mui/icons-material/AccountCircleOutlined";
-import { jwtDecode } from "jwt-decode"; // ✅ Correct
-
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import MenuIcon from "@mui/icons-material/Menu"; // hamburger menu for mobile
+import HomeIcon from "@mui/icons-material/Home"; // home icon
+import FavoriteIcon from "@mui/icons-material/Favorite"; // solid heart
+import ShoppingCartIcon from "@mui/icons-material/ShoppingCart"; // cart filled
+import AccountCircleIcon from "@mui/icons-material/AccountCircle"; // account circle filled
+import {jwtDecode} from "jwt-decode";
 
 const Navbar = () => {
   const [anchorEl, setAnchorEl] = React.useState(null);
-  const [accountMenuAnchor, setAccountMenuAnchor] = React.useState(null);
+  const [accountAnchorEl, setAccountAnchorEl] = React.useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const token = localStorage.getItem("token");
-  const isLoggedIn = !!token;
+  const isLoggedIn = Boolean(token);
 
   let username = "";
   if (token) {
     try {
       const decoded = jwtDecode(token);
       username = decoded.name || decoded.email || "User";
-    } catch (err) {
+    } catch {
       username = "User";
     }
   }
 
-  const handleMenuOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+  // Navigation items
+  const navItems = [
+    { label: "New Arrivals", link: "/product-list" },
+    { label: "Collections", link: "/collections" },
+    { label: "Best Sellers", link: "/best-sellers" },
+    { label: "Shop By", link: "/shop-by" },
+  ];
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-  };
+  const rightItems = [
+    { label: "Fabric & Care", link: "/fabric-care" },
+    { label: "FAQ", link: "/faq" },
+    { label: "Brand Story", link: "/brand-story" },
+    { label: "Our Story", link: "/our-story" },
+  ];
 
-  const handleAccountClick = (event) => {
-    setAccountMenuAnchor(event.currentTarget);
-  };
+  // Combined mobile menu items
+  const mobileMenuItems = [...navItems, ...rightItems];
 
-  const handleAccountClose = () => {
-    setAccountMenuAnchor(null);
-  };
+  // Handlers
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleAccountOpen = (event) => setAccountAnchorEl(event.currentTarget);
+  const handleAccountClose = () => setAccountAnchorEl(null);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -58,104 +69,152 @@ const Navbar = () => {
     window.location.reload();
   };
 
+  const isActive = (path) => location.pathname === path;
+
+  // Replace counts with actual values from your store if needed
+  const wishlistCount = 0;
+  const cartCount = 0;
+
   return (
     <header>
-      <AppBar position="relative" sx={{ backgroundColor: "#fff", boxShadow: "none" }}>
-        <Container>
-          <Toolbar sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            {/* Left Menu */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 7 }}>
-              {[
-                { label: "New Arrivals", link: "/product-list" },
-                { label: "Collections", link: "/collections" },
-                { label: "Best Sellers", link: "/product/:id" },
-                { label: "Shop By", link: "/test" },
-              ].map((item) => (
-                <Link key={item.label} to={item.link} style={{ textDecoration: "none" }}>
-                  <Typography variant="body2" sx={{ color: "#000", cursor: "pointer", fontWeight: 500 }}>
-                    {item.label}
+      <AppBar
+        position="sticky"
+        color="default"
+        elevation={0}
+        sx={{ backgroundColor: "#fff" }}
+      >
+        <Container maxWidth="lg">
+          <Toolbar disableGutters sx={{ justifyContent: "space-between" }}>
+            {/* Left navigation (desktop) */}
+            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 5 }}>
+              {navItems.map(({ label, link }) => (
+                <Link
+                  key={label}
+                  to={link}
+                  style={{
+                    textDecoration: "none",
+                  }}
+                >
+                  <Typography
+                    variant="button"
+                    sx={{
+                      color: isActive(link) ? "#754c29" : "#000",
+                      fontWeight: isActive(link) ? 700 : 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#754c29" },
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    {label}
                   </Typography>
                 </Link>
               ))}
             </Box>
 
-            {/* Center Logo */}
-            <Box sx={{ flexGrow: 1, display: "flex", justifyContent: "center" }}>
-              <Link to="/" style={{ textDecoration: "none" }}>
-                <Typography sx={{ fontSize: "24px", fontWeight: "bold", color: "#754c29" }}>
-                  <img src="/avantilogo.jpg" alt="Logo" style={{ height: "40px" }} />
-                </Typography>
+            {/* Logo center */}
+            <Box sx={{ flexGrow: 1, textAlign: "center" }}>
+              <Link to="/" style={{ display: "inline-block" }}>
+                <img
+                  src="/avantilogo.jpg"
+                  alt="Logo"
+                  style={{ height: 48, cursor: "pointer" }}
+                  loading="lazy"
+                />
               </Link>
             </Box>
 
-            {/* Right Side Icons */}
-            <Box sx={{ display: { xs: "none", md: "flex" }, gap: 2, alignItems: "center" }}>
-              {/* Other Menu Links */}
-              {[
-                { label: "Fabric & Care", link: "/fabric-care" },
-                { label: "FAQ", link: "/faq" },
-                { label: "Brand Story", link: "/product-list" },
-                { label: "Our Story", link: "/our-story" },
-              ].map((item) => (
-                <Link key={item.label} to={item.link} style={{ textDecoration: "none" }}>
-                  <Typography variant="body2" sx={{ color: "#000", cursor: "pointer", fontWeight: 500 }}>
-                    {item.label}
+            {/* Right items (desktop) */}
+            <Box sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 3 }}>
+              {rightItems.map(({ label, link }) => (
+                <Link key={label} to={link} style={{ textDecoration: "none" }}>
+                  <Typography
+                    variant="button"
+                    sx={{
+                      color: isActive(link) ? "#754c29" : "#000",
+                      fontWeight: isActive(link) ? 700 : 500,
+                      cursor: "pointer",
+                      "&:hover": { color: "#754c29" },
+                      transition: "color 0.3s",
+                    }}
+                  >
+                    {label}
                   </Typography>
                 </Link>
               ))}
 
-              {/* Wishlist Icon */}
-              <Link to="/wishlist">
-                <IconButton
-                  sx={{
-                    border: "2px solid #754c29",
-                    color: "#754c29",
-                    borderRadius: "50%",
-                    "&:hover": { backgroundColor: "#754c29", color: "#fff" },
-                  }}
+              {/* Wishlist */}
+              <Link to="/wishlist" aria-label="Wishlist">
+                <Badge
+                  badgeContent={wishlistCount}
+                  color="error"
+                  overlap="circular"
+                  invisible={wishlistCount === 0}
                 >
-                  <FavoriteBorderIcon fontSize="small" />
-                </IconButton>
+                  <IconButton
+                    sx={{
+                      border: "2px solid #754c29",
+                      color: "#754c29",
+                      borderRadius: "50%",
+                      "&:hover": { backgroundColor: "#754c29", color: "#fff" },
+                    }}
+                  >
+                    <FavoriteIcon fontSize="small" />
+                  </IconButton>
+                </Badge>
               </Link>
 
-              {/* Cart Icon */}
-              <Link to="/cart">
-                <IconButton
-                  sx={{
-                    border: "2px solid #754c29",
-                    color: "#754c29",
-                    borderRadius: "50%",
-                    "&:hover": { backgroundColor: "#754c29", color: "#fff" },
-                  }}
+              {/* Cart */}
+              <Link to="/cart" aria-label="Cart">
+                <Badge
+                  badgeContent={cartCount}
+                  color="error"
+                  overlap="circular"
+                  invisible={cartCount === 0}
                 >
-                  <ShoppingCartOutlinedIcon fontSize="small" />
-                </IconButton>
+                  <IconButton
+                    sx={{
+                      border: "2px solid #754c29",
+                      color: "#754c29",
+                      borderRadius: "50%",
+                      "&:hover": { backgroundColor: "#754c29", color: "#fff" },
+                    }}
+                  >
+                    <ShoppingCartIcon fontSize="small" />
+                  </IconButton>
+                </Badge>
               </Link>
 
-              {/* Account Icon with Dropdown */}
+              {/* Account */}
               <IconButton
-                onClick={handleAccountClick}
+                aria-controls={Boolean(accountAnchorEl) ? "account-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={Boolean(accountAnchorEl) ? "true" : undefined}
+                onClick={handleAccountOpen}
                 sx={{
                   border: "2px solid #754c29",
                   color: "#754c29",
                   borderRadius: "50%",
                   "&:hover": { backgroundColor: "#754c29", color: "#fff" },
                 }}
+                aria-label="Account"
               >
-                <AccountCircleOutlinedIcon fontSize="small" />
+                <AccountCircleIcon fontSize="small" />
               </IconButton>
-              <Menu anchorEl={accountMenuAnchor} open={Boolean(accountMenuAnchor)} onClose={handleAccountClose}>
+              <Menu
+                id="account-menu"
+                anchorEl={accountAnchorEl}
+                open={Boolean(accountAnchorEl)}
+                onClose={handleAccountClose}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+              >
                 {!isLoggedIn ? (
                   <>
-                    <MenuItem onClick={handleAccountClose}>
-                      <Link to="/register" style={{ textDecoration: "none", color: "inherit" }}>
-                        Register
-                      </Link>
+                    <MenuItem onClick={handleAccountClose} component={Link} to="/register">
+                      Register
                     </MenuItem>
-                    <MenuItem onClick={handleAccountClose}>
-                      <Link to="/login" style={{ textDecoration: "none", color: "inherit" }}>
-                        Login
-                      </Link>
+                    <MenuItem onClick={handleAccountClose} component={Link} to="/login">
+                      Login
                     </MenuItem>
                   </>
                 ) : (
@@ -167,47 +226,61 @@ const Navbar = () => {
               </Menu>
             </Box>
 
-            {/* Mobile Menu */}
-            <IconButton sx={{ display: { xs: "block", md: "none" } }} onClick={handleMenuOpen}>
-              <MoreVertIcon sx={{ color: "#754c29" }} />
+            {/* Mobile menu icon (right) */}
+            <IconButton
+              edge="end"
+              aria-label="menu"
+              aria-controls={Boolean(anchorEl) ? "mobile-menu" : undefined}
+              aria-haspopup="true"
+              aria-expanded={Boolean(anchorEl) ? "true" : undefined}
+              onClick={handleMenuOpen}
+              sx={{ display: { xs: "flex", md: "none" }, color: "#754c29" }}
+            >
+              <MenuIcon />
             </IconButton>
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
-              {[
-                { label: "New Arrivals", link: "/new-arrivals" },
-                { label: "Collections", link: "/collections" },
-                { label: "Best Sellers", link: "/best-sellers" },
-                { label: "Shop By", link: "/shop-by" },
-                { label: "Fabric & Care", link: "/fabric-care" },
-                { label: "FAQ", link: "/faq" },
-                { label: "Brand Story", link: "/productpage" },
-                { label: "Our Story", link: "/our-story" },
-              ].map((item) => (
-                <MenuItem key={item.label} onClick={handleMenuClose}>
-                  <Link to={item.link} style={{ textDecoration: "none", color: "inherit" }}>
-                    {item.label}
-                  </Link>
+
+            <Menu
+              id="mobile-menu"
+              anchorEl={anchorEl}
+              open={Boolean(anchorEl)}
+              onClose={handleMenuClose}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              transformOrigin={{ vertical: "top", horizontal: "right" }}
+              keepMounted
+            >
+              {mobileMenuItems.map(({ label, link }) => (
+                <MenuItem
+                  key={label}
+                  onClick={() => {
+                    handleMenuClose();
+                    navigate(link);
+                  }}
+                >
+                  {label}
                 </MenuItem>
               ))}
 
-              {/* Register / Login / Logout for Mobile */}
               {!isLoggedIn ? (
                 <>
-                  <MenuItem onClick={handleMenuClose}>
-                    <Link to="/register" style={{ textDecoration: "none", color: "inherit" }}>
-                      Register
-                    </Link>
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate("/register");
+                    }}
+                  >
+                    Register
                   </MenuItem>
-                  <MenuItem onClick={handleMenuClose}>
-                    <Link to="/login" style={{ textDecoration: "none", color: "inherit" }}>
-                      Login
-                    </Link>
+                  <MenuItem
+                    onClick={() => {
+                      handleMenuClose();
+                      navigate("/login");
+                    }}
+                  >
+                    Login
                   </MenuItem>
                 </>
               ) : (
-                <>
-                  <MenuItem disabled>Hello, {username}</MenuItem>
-                  <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                </>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
               )}
             </Menu>
           </Toolbar>
