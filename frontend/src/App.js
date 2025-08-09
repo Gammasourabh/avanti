@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Home from "./components/Home";
+import Home from "./pages/Home/Home";
 import BestSeller from "./components/BestSeller";
 import AboutUs from "./components/AboutUs";
 import ProductPage from "./pages/products/ProductPage";
@@ -17,6 +17,7 @@ import ProductListPage from "./pages/products/ProductListPage";
 import AllProducts from "./pages/products/AllProducts";
 import BulkProductImportExport from "./pages/products/BulkProductImportExport";
 import ProductCategories from "./pages/products/ProductCategories";
+import ProductCart from "./pages/Cart/ProductCart";
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/fabric-care" element={<FabricAndCare />} />
         <Route path="/product-list" element={<ProductListPage />} />
+        <Route path="/producr-cart" element={<ProductCart/>}/>
 
         {/* Authentication routes */}
         <Route

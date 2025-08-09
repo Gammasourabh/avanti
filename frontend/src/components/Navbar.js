@@ -164,7 +164,7 @@ const Navbar = () => {
               </Link>
 
               {/* Cart */}
-              <Link to="/cart" aria-label="Cart">
+              <Link to="/producr-cart" aria-label="Cart">
                 <Badge
                   badgeContent={cartCount}
                   color="error"

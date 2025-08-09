@@ -16,8 +16,8 @@ import Footer from "../../components/Footer";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchProducts } from "../../features/products/productSlice";
+import { addItem } from "../../features/cart/cartSlice";
 
-// Helper: fallback for product fields (prevents undefined access!)
 const getSafe = (obj, path, def = "") =>
   path.split(".").reduce((val, key) => (val && val[key] !== undefined ? val[key] : def), obj);
 
@@ -26,7 +26,8 @@ const ACCENT = "#603813";
 const ProductPage = () => {
   const [openSections, setOpenSections] = useState({});
   const [product, setProduct] = useState(null);
-
+  const [selectedQuantity, setSelectedQuantity] = useState(1);
+  const [selectedSize, setSelectedSize] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -38,17 +39,41 @@ const ProductPage = () => {
     } else {
       const found = products.find((p) => p._id === id);
       setProduct(found || null);
+
+      // Default size selection (first in available sizes)
+      if (found && found.sizes && found.sizes.length && !selectedSize) {
+        setSelectedSize(found.sizes[0]);
+      }
     }
+    // eslint-disable-next-line
   }, [dispatch, id, products]);
 
   const toggleCollapse = (section) => {
     setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  if (!product) {
+ 
+  // Ensure selected size is valid
+  useEffect(() => {
+    if (product && product.sizes && product.sizes.length && !selectedSize) {
+      setSelectedSize(product.sizes[0]);
+    }
+  }, [product, selectedSize]);
+
+ const handleAddToCart = () => {
+  dispatch(addItem({
+    product: { ...product, id: product._id }, // Ensure 'id' is set
+    quantity: selectedQuantity
+  }));
+};
+
+    
+ 
+   if (!product) {
     if (!products.length) return <p className="text-center mt-5">Loading...</p>;
     return <p className="text-center mt-5">Product not found.</p>;
   }
+
 
   const sliderSettings = {
     dots: true,
@@ -62,14 +87,13 @@ const ProductPage = () => {
     fade: true,
   };
 
-  // --------- COMPONENT JSX ----------
   return (
     <>
       <Advertisements />
       <Navbar />
 
+      {/* Inline Styles */}
       <style>{`
-        /* Animation for MDBCollapse content */
         .fade-collapse {
           transition: all .35s cubic-bezier(.52,0,.31,1);
           opacity: 1;
@@ -78,7 +102,6 @@ const ProductPage = () => {
           opacity: 0;
           transform: translateY(-15px);
         }
-        /* Image hover for related cards */
         .card-hover img {
           transition: transform .4s cubic-bezier(.52,0,.31,1);
         }
@@ -99,8 +122,8 @@ const ProductPage = () => {
 
       <MDBContainer className="my-5">
         <MDBRow className="gx-4 gy-3 flex-column flex-md-row">
+          {/* Images Column */}
           <MDBCol md="6" className="mb-4 mb-md-0">
-            {/* Mobile slider */}
             <div className="d-md-none mb-4 rounded-3 overflow-hidden shadow-sm" style={{ background: "#f8f8f4" }}>
               {product.images && product.images.length > 1 ? (
                 <Slider {...sliderSettings}>
@@ -124,7 +147,6 @@ const ProductPage = () => {
                 />
               )}
             </div>
-            {/* Desktop grid - like screenshot */}
             <div className="d-none d-md-flex flex-wrap gap-3 justify-content-between">
               {product.images?.slice(0, 4).map((img, i) => (
                 <div
@@ -144,7 +166,6 @@ const ProductPage = () => {
                   />
                 </div>
               ))}
-              {/* Tall/wide large image, as in screenshot */}
               {product.images?.length > 4 && (
                 <div className="w-100 rounded-3 overflow-hidden shadow-sm mt-2" style={{ background: "#f8f8f4" }}>
                   <img
@@ -163,6 +184,7 @@ const ProductPage = () => {
             </div>
           </MDBCol>
 
+          {/* Info Column */}
           <MDBCol md="6" className="d-flex flex-column pt-md-2">
             <h2 className="fw-bold mb-2" style={{ fontSize: "clamp(22px, 5vw, 36px)", letterSpacing: "0.5px" }}>
               {product.name}
@@ -180,16 +202,16 @@ const ProductPage = () => {
                     key={size + idx}
                     outline
                     color="dark"
-                    className="rounded-0 px-3 py-2 size-btn"
+                    className={`rounded-0 px-3 py-2 size-btn${selectedSize === size ? " selected" : ""}`}
                     style={{
                       borderColor: ACCENT,
                       color: ACCENT,
                       fontSize: "13.5px",
                       minWidth: 48,
                       fontWeight: 600,
-                      background: "#fff"
+                      background: "#fff",
                     }}
-                    // Add selection logic if you wish: `active={selectedSize === size}`
+                    onClick={() => setSelectedSize(size)}
                   >
                     {size}
                   </MDBBtn>
@@ -202,9 +224,25 @@ const ProductPage = () => {
 
             {/* Quantity selector */}
             <div className="d-flex align-items-center gap-3 my-3">
-              <MDBBtn outline color="dark" className="rounded-0 px-3 shadow-none" style={{ color: ACCENT, borderColor: ACCENT }}>-</MDBBtn>
-              <span style={{ fontSize: "17.5px", fontWeight: 600 }}>1</span>
-              <MDBBtn outline color="dark" className="rounded-0 px-3 shadow-none" style={{ color: ACCENT, borderColor: ACCENT }}>+</MDBBtn>
+              <MDBBtn
+                outline
+                color="dark"
+                className="rounded-0 px-3 shadow-none"
+                style={{ color: ACCENT, borderColor: ACCENT }}
+                onClick={() => setSelectedQuantity(q => Math.max(1, q - 1))}
+              >
+                -
+              </MDBBtn>
+              <span style={{ fontSize: "17.5px", fontWeight: 600 }}>{selectedQuantity}</span>
+              <MDBBtn
+                outline
+                color="dark"
+                className="rounded-0 px-3 shadow-none"
+                style={{ color: ACCENT, borderColor: ACCENT }}
+                onClick={() => setSelectedQuantity(q => q + 1)}
+              >
+                +
+              </MDBBtn>
             </div>
 
             {/* Add to cart button */}
@@ -219,6 +257,7 @@ const ProductPage = () => {
                 transition: "box-shadow .25s",
                 boxShadow: "0 4px 16px #cdb78b16"
               }}
+              onClick={handleAddToCart}
             >
               ADD TO CART
             </MDBBtn>
